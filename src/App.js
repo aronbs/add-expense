@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import './App.css';
 import styled, {css} from "styled-components";
 import GlobalStyles from "./styles/Global.js";
@@ -11,6 +11,7 @@ import {Card} from "./styles/Card.styled";
 import { CardButton } from "./styles/Card-button.styled";
 import { StatsContainer} from "./styles/Stats-container.styled";
 import {StatsPtag} from "./styles/Stats-p-tag.styled";
+import {getExpenses, addExpense, removeExpense} from "./services/api";
 
 
 
@@ -22,9 +23,11 @@ function App() {
   const [list, setList] = useState([]);
   const [name, setName] = useState('');
   const [cost, setCost] = useState('');
+  const [isFetching, setIsFetching] = useState(true);
 
-  const addToArray = () => {
-    setList([...list, {name,cost}]);
+  const addToArray = async () => {
+    const newExpense = await addExpense({ name, cost })
+    setList([...list, newExpense]);
     setName('');
     setCost('');
   
@@ -32,8 +35,8 @@ function App() {
   }
 
 
-
-  /*const renderList = () => {
+/*
+  const renderList = () => {
     return list.map((item, index) => {
       if(index === list.length - 1) {
         return item.name
@@ -42,21 +45,37 @@ function App() {
       })
     }*/
 
+    useEffect(() => {
+      const getExpensesList = async () => {
+        const data = await getExpenses()
+        setList(data)
+        setIsFetching(false)
+      }
+       getExpensesList();
+    },[])
+
+    const removeCard = async (id) => {
+      const deletedExpense = await removeExpense(id)
+      const newList = list.filter((item) => item.id !== deletedExpense.id);
+      setList(newList);
+
+    }
+
     const renderCards = () => {
-      return list.map((item,index) => (
-        <Card key={index}>
+      return list.length > 0 ? list.map((item) => (
+        <Card key={item.id}>
           <div><p><strong>Name:</strong> {item.name}</p>
           <p><strong>Cost:</strong> {item.cost}</p></div>
-          <CardButton onClick={()=>removeCard(index)}>x</CardButton>
+          <CardButton onClick={()=>removeCard(item.id)}>x</CardButton>
         </Card>
-      ))
+      )) : isFetching ? (<p>Loading</p>) : <p>No expenses yet</p>
       
     }
 
-    const removeCard = (index) => {
+   /*  const removeCard = (index) => {
       const newList = list.filter((_,i) => i !== index);
       setList(newList);
-    }
+    } */
 
 
 
